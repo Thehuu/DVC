@@ -1,0 +1,36 @@
+
+{
+  "manifest_version": 3,
+  "name": "DVC Assistant Extractor",
+  "version": "1.1.0",
+  "description": "Trợ lý ảo nộp hồ sơ DVC với giao diện nổi thông minh",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Mở Trợ lý DVC"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["index.html", "index.css", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

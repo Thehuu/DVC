@@ -1,0 +1,5 @@
+{
+  "name": "Extent_28_12",
+  "description": "A Chrome/Orion extension to scan web pages for interactive elements and send data to the DVC Assistant webhook.",
+  "requestFramePermissions": []
+}
