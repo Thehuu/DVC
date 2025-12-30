@@ -33,6 +33,7 @@ const App: FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false); // Dynamic scroll indicator
   const [phaseData, setPhaseData] = useState<{ guide: string, requireConfirm: boolean, currentPhase: string | null }>({
     guide: "Bác hãy làm theo hướng dẫn bên dưới nhé.",
     requireConfirm: false,
@@ -50,6 +51,7 @@ const App: FC = () => {
 
   const scanResolver = useRef<((data: any) => void) | null>(null);
   const stepResolver = useRef<((success: boolean) => void) | null>(null);
+  const surveyRef = useRef<HTMLDivElement>(null); // Ref để check scroll
   const api = getBrowserApi();
 
   useEffect(() => {
@@ -83,6 +85,45 @@ const App: FC = () => {
 
     return () => window.removeEventListener("message", handleMessage);
   }, []);
+
+  // CHECK SCROLL: Khi status SURVEY thay đổi, check xem có overflow không
+  useEffect(() => {
+    if (status === 'SURVEY' && surveyRef.current) {
+      const checkScroll = () => {
+        const { scrollHeight, clientHeight } = surveyRef.current!;
+        console.log('📊 Scroll Check:', { scrollHeight, clientHeight, willShowHint: scrollHeight > clientHeight + 10 });
+        // Nếu scrollHeight > clientHeight → có nội dung ẩn → show hint
+        setShowScrollHint(scrollHeight > clientHeight + 10); // +10px tolerance
+      };
+      
+      // Check ngay
+      checkScroll();
+      
+      // Re-check sau khi animation/form render xong
+      const timer = setTimeout(checkScroll, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
+
+  // HANDLE SCROLL: Khi user scroll, check xem có cần show hint không
+  const handleSurveyScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    
+    // Threshold = 50px (ẩn khi scroll đến gần bottom)
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+    const shouldShow = !isNearBottom && scrollHeight > clientHeight + 10;
+    console.log('🔄 Scrolling:', { scrollTop, isNearBottom, shouldShow });
+    
+    setShowScrollHint(shouldShow);
+  };
+
+  // SCROLL DOWN: Khi click vào mũi tên, cuộn xuống dưới
+  const scrollToBottom = () => {
+    if (surveyRef.current) {
+      surveyRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (api?.storage && status !== 'IDLE') {
@@ -321,10 +362,11 @@ const App: FC = () => {
         )}
 
         {status === 'SURVEY' && (
-          <div className="w-full space-y-4 animate-in fade-in pb-4">
+          <div className="w-full relative animate-in fade-in pb-4 max-h-[520px] overflow-y-auto custom-scrollbar" ref={surveyRef} onScroll={handleSurveyScroll}>
+            <div className="space-y-4">
             {/* ===== MỤC 1: LOẠI GIẤY TỜ CẦN XÁC NHẬN ===== */}
             <div className="space-y-2">
-              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+              <label className="text-[12px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
                 <span className="text-bca-red">●</span> Mục 1: Loại giấy tờ cần xác nhận
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -342,7 +384,7 @@ const App: FC = () => {
 
             {/* ===== MỤC 2: ĐỐI TƯỢNG CẦN XÁC NHẬN ===== */}
             <div className="space-y-2">
-              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+              <label className="text-[12px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
                 <span className="text-bca-red">●</span> Mục 2: Đối tượng cần xác nhận
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -360,7 +402,7 @@ const App: FC = () => {
 
             {/* ===== MỤC 3: NƠI THỰC HIỆN ===== */}
             <div className="space-y-2">
-              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+              <label className="text-[12px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
                 <span className="text-bca-red">●</span> Mục 3: Nơi thực hiện
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -378,7 +420,7 @@ const App: FC = () => {
 
             {/* ===== MỤC 4: HÌNH THỨC NHẬN KẾT QUẢ ===== */}
             <div className="space-y-2">
-              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+              <label className="text-[12px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
                 <span className="text-bca-red">●</span> Mục 4: Hình thức nhận kết quả
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -401,6 +443,19 @@ const App: FC = () => {
               </div>
             */}
             <button onClick={initSession} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl mt-4 active:scale-95 transition-all">TIẾP TỤC THỰC HIỆN</button>
+            </div>
+            
+            {/* Dynamic Fade gradient + animated arrow (chỉ show khi còn nội dung) */}
+            {showScrollHint && (
+              <>
+                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none"></div>
+                <button onClick={scrollToBottom} className="absolute bottom-1 left-1/2 -translate-x-1/2 animate-bounce text-bca-red hover:text-red-700 transition-colors cursor-pointer p-2 active:scale-110 transition-transform">
+                  <svg className="w-7 h-7" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         )}
 

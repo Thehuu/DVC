@@ -19,6 +19,13 @@ export default {
       },
       animation: {
         'spin-slow': 'spin 3s linear infinite',
+        'bounce-subtle': 'bounce-subtle 2.5s infinite',
+      },
+      keyframes: {
+        'bounce-subtle': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        }
       }
     },
   },
