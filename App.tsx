@@ -13,7 +13,7 @@ const AVATAR_GIF = "https://res.cloudinary.com/dj779f2vh/image/upload/v176397282
 // Webhook URL để gửi dữ liệu khảo sơ & quét trang - THAY ĐỔI TẠI ĐÂY khi chuyển server mới
 const DEFAULT_WEBHOOK = 'https://wf.antoan.site/webhook/dvc-assistant';
 // Thời gian chờ giữa các bước tự động (ms) - tăng = chậm hơn, giảm = nhanh hơn
-const EXECUTION_DELAY = 1200;
+const EXECUTION_DELAY = 2000;
 /**
  * ============================================================
  */
@@ -42,11 +42,11 @@ const App: FC = () => {
   
   // State lưu trữ câu trả lời khảo sơ - các giá trị này được gửi kèm webhook khi khởi tạo
   const [answers, setAnswers] = useState<UserAnswers>({
-    target: 'SELF',           // Chính chủ (SELF) hoặc Khai hộ (BEHALF)
-    documentType: 'CCCD',     // Loại giấy tờ: CCCD hoặc CMND
-    idNumber: null as any,    // Số CCCD/ID (để null - trường này đã ẩn)
-    agencyLevel: 'COMMUNE',   // Nơi thực hiện: COMMUNE (xã) hoặc PROVINCE (tỉnh)
-    deliveryMethod: 'APP'     // Hình thức nhận kết quả: APP, DIRECT, POST
+    target: null as any,           // Chính chủ (SELF) hoặc Khai hộ (BEHALF) - BẮT BUỘC chọn
+    documentType: null as any,     // Loại giấy tờ: CCCD hoặc CMND - BẮT BUỘC chọn
+    idNumber: null as any,         // Số CCCD/ID (để null - trường này đã ẩn)
+    agencyLevel: null as any,      // Nơi thực hiện: COMMUNE (xã) hoặc PROVINCE (tỉnh) - BẮT BUỘC chọn
+    deliveryMethod: null as any    // Hình thức nhận kết quả: APP, DIRECT, POST - BẮT BUỘC chọn
   });
 
   const scanResolver = useRef<((data: any) => void) | null>(null);
@@ -104,7 +104,7 @@ const App: FC = () => {
 
     // Giá trị mặc định nếu server không trả
     let steps: WebhookStep[] = [];
-    let guide = "Bác hãy làm theo hướng dẫn bên dưới nhé.";
+    let guide = "Bạn kiểm tra các bước bên dưới nhé.";
     let confirm = false;
     let phase = null;
 
@@ -139,6 +139,24 @@ const App: FC = () => {
    * - Server xử lý và trả về danh sách action cần thực thi
    */
   const initSession = async () => {
+    // Kiểm tra xem tất cả 4 mục có được chọn không
+    if (!answers.documentType) {
+      alert('Vui lòng chọn Loại giấy tờ cần xác nhận (Mục 1)');
+      return;
+    }
+    if (!answers.target) {
+      alert('Vui lòng chọn Đối tượng cần xác nhận (Mục 2)');
+      return;
+    }
+    if (!answers.agencyLevel) {
+      alert('Vui lòng chọn Nơi thực hiện (Mục 3)');
+      return;
+    }
+    if (!answers.deliveryMethod) {
+      alert('Vui lòng chọn Hình thức nhận kết quả (Mục 4)');
+      return;
+    }
+
     setStatus('INIT_SENDING'); // Hiển thị trạng thái "đang gửi"
     try {
       const res = await fetch(webhookUrl, {
@@ -205,7 +223,7 @@ const App: FC = () => {
         if (data.status === 'finished') {
           setStatus('SUCCESS');
         } else {
-          setErrorMessage("Trang này con chưa thấy thông tin cần điền tự động.");
+          setErrorMessage("Trang này tôi chưa thấy thông tin để điền tự động.");
           setStatus('ERROR');
         }
       }
@@ -275,12 +293,22 @@ const App: FC = () => {
         )}
 
         {/* ========== AVATAR CONTAINER ========== */}
-        {/* Kích thước: w-60 h-48 = 240x192px - Thay đổi sang w-36 h-28 (nhỏ) hoặc w-72 h-60 (lớn) */}
-        <div className="mb-6 shrink-0 relative">
-          {/* Halo sáng phía sau ảnh */}
-          <div className="absolute inset-0 bg-bca-gold/5 rounded-full blur-3xl"></div>
-          {/* Ảnh avatar - phóng to 110% khi EXECUTING (đang chạy tự động) */}
-          <img src={AVATAR_GIF} className={`w-60 h-48 object-contain relative z-10 transition-all duration-500 ${status === 'EXECUTING' ? 'scale-110 drop-shadow-2xl' : ''}`} />
+        {/* Kích thước: w-72 h-60 = 288x240px (lớn hơn 30%) - Phù hợp với layout */}
+        <div className={`mb-6 shrink-0 relative transition-all duration-500 ${
+          status === 'IDLE' ? 'animate-bounce-subtle' : ''
+        }`}>
+          {/* Halo sáng động - Sáng hơn khi EXECUTING, mờ hơn ở trạng thái khác */}
+          <div className={`absolute inset-0 rounded-full blur-3xl transition-all duration-500 ${
+            status === 'EXECUTING' ? 'bg-bca-gold/20 ring-4 ring-bca-gold/30' : 'bg-bca-gold/8'
+          }`}></div>
+          {/* Halo layer thứ 2 (chỉ ở EXECUTING để tạo effect sáng hơn) */}
+          {status === 'EXECUTING' && (
+            <div className="absolute inset-0 rounded-full blur-2xl bg-bca-red/5 animate-pulse"></div>
+          )}
+          {/* Ảnh avatar - phóng to 110% khi EXECUTING, bounce nhẹ khi IDLE */}
+          <img src={AVATAR_GIF} className={`w-82 h-60 object-contain relative z-10 transition-all duration-500 ${
+            status === 'EXECUTING' ? 'scale-110 drop-shadow-2xl' : status === 'IDLE' ? 'drop-shadow-lg' : 'drop-shadow-md'
+          }`} />
         </div>
 
         {status === 'IDLE' && (
@@ -293,57 +321,73 @@ const App: FC = () => {
 
         {status === 'SURVEY' && (
           <div className="w-full space-y-6 animate-in fade-in pb-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Mục 1: Loại giấy tờ cần xác nhận</label>
-              <div className="grid grid-cols-2 gap-2">
-                {['Căn cước 12 số', 'CMND 09 số'].map(type => (
-                  <button key={type} onClick={() => setAnswers({...answers, documentType: type as any})} 
-                    className={`py-3 rounded-xl border-2 font-black text-xs transition-all ${answers.documentType === type ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                    {type}
+            {/* ===== MỤC 1: LOẠI GIẤY TỜ CẦN XÁC NHẬN ===== */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 1: Loại giấy tờ cần xác nhận <span className="text-bca-red">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'CCCD', label: 'Căn cước 12 số' },
+                  { id: 'CMND', label: 'CMND 09 số' }
+                ].map(doc => (
+                  <button key={doc.id} onClick={() => setAnswers({...answers, documentType: doc.id as any})} 
+                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.documentType === doc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    {doc.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Mục 2: Đối tượng cần xác nhận</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setAnswers({...answers, target: 'SELF'})} 
-                  className={`py-3 rounded-xl border-2 font-black text-[11px] transition-all ${answers.target === 'SELF' ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                  Chính chủ
-                </button>
-                <button onClick={() => setAnswers({...answers, target: 'BEHALF'})} 
-                  className={`py-3 rounded-xl border-2 font-black text-[11px] transition-all ${answers.target === 'BEHALF' ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                  Khai hộ
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Mục 3: Nơi thực hiện</label>
-              <div className="flex flex-col gap-2">
-                <button onClick={() => setAnswers({...answers, agencyLevel: 'PROVINCE'})} 
-                  className={`py-3 px-4 rounded-xl border-2 font-black text-[11px] text-left transition-all ${answers.agencyLevel === 'PROVINCE' ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                  Công an cấp Tỉnh
-                </button>
-                <button onClick={() => setAnswers({...answers, agencyLevel: 'COMMUNE'})} 
-                  className={`py-3 px-4 rounded-xl border-2 font-black text-[11px] text-left transition-all ${answers.agencyLevel === 'COMMUNE' ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                  Công an cấp Xã / Phường / Thị trấn
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Mục 4: Hình thức nhận kết qủa</label>
-              <div className="grid grid-cols-3 gap-1.5">
+            {/* ===== MỤC 2: ĐỐI TƯỢNG CẦN XÁC NHẬN ===== */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 2: Đối tượng cần xác nhận <span className="text-bca-red">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  //{ id: 'APP', label: 'VNeID' },
+                  { id: 'SELF', label: 'Chính chủ' },
+                  { id: 'BEHALF', label: 'Khai hộ' }
+                ].map(obj => (
+                  <button key={obj.id} onClick={() => setAnswers({...answers, target: obj.id as any})} 
+                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.target === obj.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    {obj.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ===== MỤC 3: NƠI THỰC HIỆN ===== */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 3: Nơi thực hiện <span className="text-bca-red">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'PROVINCE', label: 'Công an cấp Tỉnh' },
+                  { id: 'COMMUNE', label: 'Công an cấp Xã / Phường' }
+                ].map(loc => (
+                  <button key={loc.id} onClick={() => setAnswers({...answers, agencyLevel: loc.id as any})} 
+                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.agencyLevel === loc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    {loc.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ===== MỤC 4: HÌNH THỨC NHẬN KẾT QUẢ ===== */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 4: Hình thức nhận kết quả <span className="text-bca-red">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
                   { id: 'DIRECT', label: 'Tại cơ quan Công an' },
                   { id: 'POST', label: 'Qua Bưu điện' }
-                ].map(m => (
-                  <button key={m.id} onClick={() => setAnswers({...answers, deliveryMethod: m.id as any})} 
-                    className={`py-3 rounded-xl border-2 font-black text-[10px] transition-all ${answers.deliveryMethod === m.id ? 'border-bca-red bg-red-50 text-bca-red' : 'border-slate-200 bg-white text-slate-400'}`}>
-                    {m.label}
+                ].map(method => (
+                  <button key={method.id} onClick={() => setAnswers({...answers, deliveryMethod: method.id as any})} 
+                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.deliveryMethod === method.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    {method.label}
                   </button>
                 ))}
               </div>
@@ -355,7 +399,7 @@ const App: FC = () => {
                 className="w-full p-5 text-xl font-black bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-bca-red shadow-inner tracking-widest" placeholder="12 số..." />
               </div>
             */}
-            <button onClick={initSession} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl mt-4 active:scale-95 transition-all">TIẾP TỤC HÀNH TRÌNH</button>
+            <button onClick={initSession} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl mt-4 active:scale-95 transition-all">TIẾP TỤC THỰC HIỆN</button>
           </div>
         )}
 
@@ -381,7 +425,7 @@ const App: FC = () => {
                 </div>
               ))}
             </div>
-            <button onClick={runAutomation} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl">Chạy đợt này ngay</button>
+            <button onClick={runAutomation} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl">Thực hiện ngay</button>
           </div>
         )}
 
@@ -389,7 +433,7 @@ const App: FC = () => {
           <div className="w-full pt-4">
             <div className="bg-white p-8 rounded-2xl shadow-2xl border-t-4 border-bca-gold relative overflow-hidden text-center">
                <div className="absolute top-0 left-0 h-1.5 bg-bca-red animate-progress-indefinite w-full"></div>
-               <p className="text-[10px] font-black text-bca-red uppercase mb-4 tracking-widest">Đang điền bước {currentStepIndex + 1}/{parsedSteps.length}</p>
+               <p className="text-[10px] font-black text-bca-red uppercase mb-4 tracking-widest">Đang thực hiện bước {currentStepIndex + 1}/{parsedSteps.length}</p>
                <p className="text-base font-black text-slate-700 italic leading-relaxed italic">"{parsedSteps[currentStepIndex]?.description}"</p>
             </div>
           </div>
@@ -399,14 +443,14 @@ const App: FC = () => {
           <div className="w-full space-y-6 animate-in zoom-in">
             <div className="bg-white p-6 rounded-2xl border-l-[6px] border-bca-gold shadow-xl">
                <p className="text-base font-black text-slate-800 leading-relaxed italic text-center">
-                 {status === 'WAITING_CONFIRM' ? `"${phaseData.guide}"` : "Con đã hoàn thành đợt lệnh này. Bác nhấn nút bên dưới để con kiểm tra trang web và thực hiện phase tiếp theo nhé!"}
+                 {status === 'WAITING_CONFIRM' ? `"${phaseData.guide}"` : "Bạn nhấn nút bên dưới để tiếp tục nhé!"}
                </p>
             </div>
             <button onClick={requestNextSteps} className="w-full py-6 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                <IconScan className="w-5 h-5" /> 
                {status === 'WAITING_CONFIRM' ? 'Đã kiểm tra OK - Tiếp tục' : 'Kiểm tra & Phản hồi'}
             </button>
-            <p className="text-[9px] text-slate-400 text-center font-bold uppercase tracking-wider">Hoặc bác có thể tự tay thao tác trên trang web</p>
+            <p className="text-[9px] text-slate-400 text-center font-bold uppercase tracking-wider">Hoặc bạn có thể tự tay thao tác trên trang web</p>
           </div>
         )}
 
@@ -415,7 +459,7 @@ const App: FC = () => {
             <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-5xl font-black shadow-inner border-4 border-white animate-bounce">✓</div>
             <div className="space-y-2">
               <h3 className="text-xl font-black text-slate-800 uppercase italic">Hoàn tất!</h3>
-              <p className="text-xs text-slate-400 font-bold px-4">Bác hãy kiểm tra lại toàn bộ thông tin rồi nhấn "Gửi hồ sơ" nhé.</p>
+              <p className="text-xs text-slate-400 font-bold px-4">Bạn hãy kiểm tra lại toàn bộ thông tin rồi nhấn "Gửi hồ sơ" nhé.</p>
             </div>
             <button onClick={resetSession} className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest">Làm hồ sơ mới</button>
           </div>
@@ -426,14 +470,14 @@ const App: FC = () => {
             <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-black mb-8 border-4 border-white shadow-sm">!</div>
             <p className="text-sm text-red-500 font-black mb-10 px-4 leading-relaxed italic">{errorMessage}</p>
             <div className="flex flex-col gap-2">
-              <button onClick={requestNextSteps} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-xl active:scale-95 transition-all">Bác thử quét lại xem</button>
+              <button onClick={requestNextSteps} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-xl active:scale-95 transition-all">Bạn thử kiểm tra lại nhé</button>
               <button onClick={() => setStatus('SURVEY')} className="w-full py-3 text-slate-400 font-bold text-[10px] uppercase">Quay lại phần khảo sát</button>
             </div>
           </div>
         )}
       </main>
 
-      <footer className="h-7 bg-slate-100 flex items-center justify-center text-[7px] text-slate-400 font-black uppercase tracking-[0.4em] italic shadow-inner">Hệ thống trợ giúp nộp hồ sơ - Bộ Công An</footer>
+      <footer className="h-7 bg-slate-100 flex items-center justify-center text-[7px] text-slate-400 font-black uppercase tracking-[0.4em] italic shadow-inner">Hệ thống trợ giúp nộp hồ sơ - Dịch vụ công</footer>
     </div>
   );
 };
