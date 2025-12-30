@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, type FC } from 'react';
 // BẮT BUỘC: Thêm đuôi .ts để tránh lỗi nạp file
 import { WebhookStep, UserAnswers, PhaseResponse } from './types.ts';
@@ -306,9 +305,11 @@ const App: FC = () => {
             <div className="absolute inset-0 rounded-full blur-2xl bg-bca-red/5 animate-pulse"></div>
           )}
           {/* Ảnh avatar - phóng to 110% khi EXECUTING, bounce nhẹ khi IDLE */}
-          <img src={AVATAR_GIF} className={`w-82 h-60 object-contain relative z-10 transition-all duration-500 ${
-            status === 'EXECUTING' ? 'scale-110 drop-shadow-2xl' : status === 'IDLE' ? 'drop-shadow-lg' : 'drop-shadow-md'
-          }`} />
+          <div className="w-82 h-60 overflow-hidden rounded-2xl relative z-10">
+            <img src={AVATAR_GIF} className={`w-82 h-60 object-contain rounded-2xl relative z-10 transition-all duration-500 ${
+              status === 'EXECUTING' ? 'scale-110 drop-shadow-2xl' : status === 'IDLE' ? 'drop-shadow-lg' : 'drop-shadow-md'
+            }`} />
+          </div>
         </div>
 
         {status === 'IDLE' && (
@@ -407,7 +408,7 @@ const App: FC = () => {
           <div className="flex flex-col items-center py-12 space-y-5">
             <div className="w-12 h-12 border-4 border-bca-gold border-t-transparent rounded-full animate-spin"></div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
-              {status === 'SCANNING' ? 'Đang quét dữ liệu trang web...' : 'Đang khởi tạo phiên làm việc...'}
+              {status === 'SCANNING' ? 'Quét dữ liệu trang web...' : 'Khởi tạo phiên làm việc...'}
             </p>
           </div>
         )}
@@ -448,9 +449,9 @@ const App: FC = () => {
             </div>
             <button onClick={requestNextSteps} className="w-full py-6 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                <IconScan className="w-5 h-5" /> 
-               {status === 'WAITING_CONFIRM' ? 'Đã kiểm tra OK - Tiếp tục' : 'Kiểm tra & Phản hồi'}
+               {status === 'WAITING_CONFIRM' ? 'Kiểm tra xong -> Tiếp tục' : 'Kiểm tra & Phản hồi'}
             </button>
-            <p className="text-[9px] text-slate-400 text-center font-bold uppercase tracking-wider">Hoặc bạn có thể tự tay thao tác trên trang web</p>
+            {/* <p className="text-[9px] text-slate-400 text-center font-bold uppercase tracking-wider">Hoặc bạn có thể tự tay thao tác trên trang web</p> */}
           </div>
         )}
 
@@ -459,7 +460,7 @@ const App: FC = () => {
             <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-5xl font-black shadow-inner border-4 border-white animate-bounce">✓</div>
             <div className="space-y-2">
               <h3 className="text-xl font-black text-slate-800 uppercase italic">Hoàn tất!</h3>
-              <p className="text-xs text-slate-400 font-bold px-4">Bạn hãy kiểm tra lại toàn bộ thông tin rồi nhấn "Gửi hồ sơ" nhé.</p>
+              <p className="text-xs text-slate-400 font-bold px-4">Bạn kiểm tra lại toàn bộ thông tin rồi nhấn "Gửi hồ sơ" nhé.</p>
             </div>
             <button onClick={resetSession} className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest">Làm hồ sơ mới</button>
           </div>
@@ -470,7 +471,7 @@ const App: FC = () => {
             <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-black mb-8 border-4 border-white shadow-sm">!</div>
             <p className="text-sm text-red-500 font-black mb-10 px-4 leading-relaxed italic">{errorMessage}</p>
             <div className="flex flex-col gap-2">
-              <button onClick={requestNextSteps} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-xl active:scale-95 transition-all">Bạn thử kiểm tra lại nhé</button>
+              <button onClick={requestNextSteps} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-xl active:scale-95 transition-all">Bạn kiểm tra lại nhé</button>
               <button onClick={() => setStatus('SURVEY')} className="w-full py-3 text-slate-400 font-bold text-[10px] uppercase">Quay lại phần khảo sát</button>
             </div>
           </div>
