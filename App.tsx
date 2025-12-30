@@ -34,6 +34,7 @@ const App: FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [showScrollHint, setShowScrollHint] = useState(false); // Dynamic scroll indicator
+  const [showActionListScrollHint, setShowActionListScrollHint] = useState(false); // Scroll hint cho danh sách action
   const [phaseData, setPhaseData] = useState<{ guide: string, requireConfirm: boolean, currentPhase: string | null }>({
     guide: "Bác hãy làm theo hướng dẫn bên dưới nhé.",
     requireConfirm: false,
@@ -52,6 +53,7 @@ const App: FC = () => {
   const scanResolver = useRef<((data: any) => void) | null>(null);
   const stepResolver = useRef<((success: boolean) => void) | null>(null);
   const surveyRef = useRef<HTMLDivElement>(null); // Ref để check scroll
+  const actionListRef = useRef<HTMLDivElement>(null); // Ref để check action list scroll
   const api = getBrowserApi();
 
   useEffect(() => {
@@ -91,9 +93,10 @@ const App: FC = () => {
     if (status === 'SURVEY' && surveyRef.current) {
       const checkScroll = () => {
         const { scrollHeight, clientHeight } = surveyRef.current!;
-        console.log('📊 Scroll Check:', { scrollHeight, clientHeight, willShowHint: scrollHeight > clientHeight + 10 });
+        const hasOverflow = scrollHeight > clientHeight + 10;
+        console.log('📊 SURVEY Form:', `scrollHeight=${scrollHeight}px, clientHeight=${clientHeight}px, overflow=${hasOverflow}`);
         // Nếu scrollHeight > clientHeight → có nội dung ẩn → show hint
-        setShowScrollHint(scrollHeight > clientHeight + 10); // +10px tolerance
+        setShowScrollHint(hasOverflow); // +10px tolerance
       };
       
       // Check ngay
@@ -105,6 +108,23 @@ const App: FC = () => {
     }
   }, [status]);
 
+  // CHECK ACTION LIST SCROLL: Khi danh sách action thay đổi, check xem có overflow không
+  useEffect(() => {
+    if (status === 'READY_EXECUTE' && actionListRef.current) {
+      const checkScroll = () => {
+        const { scrollHeight, clientHeight } = actionListRef.current!;
+        const hasOverflow = scrollHeight > clientHeight + 10;
+        console.log('📋 Action List:', `scrollHeight=${scrollHeight}px, clientHeight=${clientHeight}px, overflow=${hasOverflow}`);
+        setShowActionListScrollHint(hasOverflow);
+      };
+      
+      // Check ngay
+      checkScroll();
+      const timer = setTimeout(checkScroll, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [status, parsedSteps]);
+
   // HANDLE SCROLL: Khi user scroll, check xem có cần show hint không
   const handleSurveyScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -113,7 +133,6 @@ const App: FC = () => {
     // Threshold = 50px (ẩn khi scroll đến gần bottom)
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
     const shouldShow = !isNearBottom && scrollHeight > clientHeight + 10;
-    console.log('🔄 Scrolling:', { scrollTop, isNearBottom, shouldShow });
     
     setShowScrollHint(shouldShow);
   };
@@ -122,6 +141,24 @@ const App: FC = () => {
   const scrollToBottom = () => {
     if (surveyRef.current) {
       surveyRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+    }
+  };
+
+  // HANDLE ACTION LIST SCROLL: Khi user scroll danh sách action, check xem có cần show hint không
+  const handleActionListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+    const shouldShow = !isNearBottom && scrollHeight > clientHeight + 10;
+    
+    setShowActionListScrollHint(shouldShow);
+  };
+
+  // SCROLL ACTION LIST: Khi click vào mũi tên danh sách action, cuộn xuống dưới
+  const scrollActionListDown = () => {
+    if (actionListRef.current) {
+      actionListRef.current.scrollBy({ top: 150, behavior: 'smooth' });
     }
   };
 
@@ -144,7 +181,7 @@ const App: FC = () => {
 
     // Giá trị mặc định nếu server không trả
     let steps: WebhookStep[] = [];
-    let guide = "Bạn kiểm tra các bước bên dưới nhé.";
+    let guide = "Bạn kiểm tra bước bên dưới nhé.";
     let confirm = false;
     let phase = null;
 
@@ -335,14 +372,14 @@ const App: FC = () => {
         {/* ========== AVATAR CONTAINER ========== */}
         {/* Kích thước: w-72 h-60 = 288x240px (lớn hơn 30%) - Phù hợp với layout */}
         <div className={`mb-1 shrink-0 relative transition-all duration-500 ${
-          status === 'IDLE' ? 'animate-bounce-subtle' : ''
-        }`}>
-          {/* Halo sáng động - Sáng hơn khi EXECUTING, mờ hơn ở trạng thái khác */}
+          (status === 'IDLE' || status === 'SURVEY' || status === 'READY_EXECUTE') ? 'animate-bounce-subtle' : ''
+        }`} data-status={status}>
+          {/* Halo sáng động - Sáng hơn khi EXECUTING hoặc READY_EXECUTE, mờ hơn ở trạng thái khác */}
           <div className={`absolute inset-0 rounded-full blur-3xl transition-all duration-500 ${
-            status === 'EXECUTING' ? 'bg-bca-gold/20 ring-4 ring-bca-gold/30' : 'bg-bca-gold/8'
+            status === 'EXECUTING' ? 'bg-bca-gold/25 ring-4 ring-bca-gold/40' : status === 'READY_EXECUTE' ? 'bg-bca-gold/22 ring-2 ring-bca-gold/35' : 'bg-bca-gold/6'
           }`}></div>
-          {/* Halo layer thứ 2 (chỉ ở EXECUTING để tạo effect sáng hơn) */}
-          {status === 'EXECUTING' && (
+          {/* Halo layer thứ 2 (EXECUTING hoặc READY_EXECUTE để tạo effect sáng hơn) */}
+          {(status === 'EXECUTING' || status === 'READY_EXECUTE') && (
             <div className="absolute inset-0 rounded-full blur-2xl bg-bca-red/5 animate-pulse"></div>
           )}
           {/* Ảnh avatar - phóng to 110% khi EXECUTING, bounce nhẹ khi IDLE */}
@@ -356,7 +393,7 @@ const App: FC = () => {
         {status === 'IDLE' && (
           <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom">
             <h2 className="text-xl font-black text-slate-800 uppercase italic tracking-tight">Chào bạn!</h2>
-            <p className="text-sm text-slate-500 font-bold leading-relaxed px-4">Tôi sẽ giúp bạn nộp hồ sơ Dịch vụ công BCA.</p>
+            <p className="text-sm text-slate-500 font-bold leading-relaxed px-4">Tôi sẽ giúp bạn nộp hồ sơ DVC BCA.</p>
             <button onClick={() => setStatus('SURVEY')} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl hover:-translate-y-1 transition-transform">BẮT ĐẦU NGAY</button>
           </div>
         )}
@@ -473,13 +510,25 @@ const App: FC = () => {
             <div className="bg-white p-5 rounded-2xl shadow-md border-l-4 border-bca-gold mb-6 text-center">
               <p className="text-sm font-bold text-slate-700 italic leading-relaxed">"{phaseData.guide}"</p>
             </div>
-            <div className="max-h-48 overflow-y-auto mb-6 custom-scrollbar pr-2 space-y-2.5">
+            <div className="max-h-48 overflow-y-auto mb-6 custom-scrollbar pr-2 space-y-2.5 relative" ref={actionListRef} onScroll={handleActionListScroll}>
               {parsedSteps.map((s, i) => (
                 <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 text-[11px] flex gap-4 items-center shadow-sm">
                   <span className="w-6 h-6 bg-red-50 text-bca-red font-black flex items-center justify-center rounded-full shrink-0 text-xs">{i+1}</span>
                   <span className="font-bold text-slate-600 leading-tight">{s.description}</span>
                 </div>
               ))}
+              
+              {/* Dynamic Fade gradient + animated arrow cho danh sách action */}
+              {showActionListScrollHint && (
+                <>
+                  <div className="sticky bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none -mx-2 px-2"></div>
+                  <button onClick={scrollActionListDown} className="absolute bottom-2 right-1 animate-bounce text-bca-red hover:text-red-700 transition-colors cursor-pointer p-1.5 active:scale-110 transition-transform z-10">
+                    <svg className="w-6 h-6" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
             <button onClick={runAutomation} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl">Thực hiện ngay</button>
           </div>
@@ -499,7 +548,7 @@ const App: FC = () => {
           <div className="w-full space-y-6 animate-in zoom-in">
             <div className="bg-white p-6 rounded-2xl border-l-[6px] border-bca-gold shadow-xl">
                <p className="text-base font-black text-slate-800 leading-relaxed italic text-center">
-                 {status === 'WAITING_CONFIRM' ? `"${phaseData.guide}"` : "Bạn nhấn nút bên dưới để tiếp tục nhé!"}
+                 {status === 'WAITING_CONFIRM' ? `"${phaseData.guide}"` : "Nhấn nút bên dưới để tiếp tục!"}
                </p>
             </div>
             <button onClick={requestNextSteps} className="w-full py-6 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
