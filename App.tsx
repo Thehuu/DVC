@@ -293,7 +293,7 @@ const App: FC = () => {
 
         {/* ========== AVATAR CONTAINER ========== */}
         {/* Kích thước: w-72 h-60 = 288x240px (lớn hơn 30%) - Phù hợp với layout */}
-        <div className={`mb-6 shrink-0 relative transition-all duration-500 ${
+        <div className={`mb-1 shrink-0 relative transition-all duration-500 ${
           status === 'IDLE' ? 'animate-bounce-subtle' : ''
         }`}>
           {/* Halo sáng động - Sáng hơn khi EXECUTING, mờ hơn ở trạng thái khác */}
@@ -315,17 +315,17 @@ const App: FC = () => {
         {status === 'IDLE' && (
           <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom">
             <h2 className="text-xl font-black text-slate-800 uppercase italic tracking-tight">Chào bạn!</h2>
-            <p className="text-xs text-slate-500 font-bold leading-relaxed px-4">Tôi sẽ giúp điền thông tin và nộp hồ sơ trên cổng Dịch vụ công.</p>
+            <p className="text-sm text-slate-500 font-bold leading-relaxed px-4">Tôi sẽ giúp bạn nộp hồ sơ Dịch vụ công BCA.</p>
             <button onClick={() => setStatus('SURVEY')} className="w-full py-5 bg-bca-red text-white rounded-2xl font-black text-sm uppercase shadow-2xl hover:-translate-y-1 transition-transform">BẮT ĐẦU NGAY</button>
           </div>
         )}
 
         {status === 'SURVEY' && (
-          <div className="w-full space-y-6 animate-in fade-in pb-4">
+          <div className="w-full space-y-4 animate-in fade-in pb-4">
             {/* ===== MỤC 1: LOẠI GIẤY TỜ CẦN XÁC NHẬN ===== */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
-                <span className="text-bca-red">●</span> Mục 1: Loại giấy tờ cần xác nhận <span className="text-bca-red">*</span>
+            <div className="space-y-2">
+              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 1: Loại giấy tờ cần xác nhận
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -333,7 +333,7 @@ const App: FC = () => {
                   { id: 'CMND', label: 'CMND 09 số' }
                 ].map(doc => (
                   <button key={doc.id} onClick={() => setAnswers({...answers, documentType: doc.id as any})} 
-                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.documentType === doc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    className={`py-2 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.documentType === doc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
                     {doc.label}
                   </button>
                 ))}
@@ -341,9 +341,9 @@ const App: FC = () => {
             </div>
 
             {/* ===== MỤC 2: ĐỐI TƯỢNG CẦN XÁC NHẬN ===== */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
-                <span className="text-bca-red">●</span> Mục 2: Đối tượng cần xác nhận <span className="text-bca-red">*</span>
+            <div className="space-y-2">
+              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 2: Đối tượng cần xác nhận
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -351,7 +351,7 @@ const App: FC = () => {
                   { id: 'BEHALF', label: 'Khai hộ' }
                 ].map(obj => (
                   <button key={obj.id} onClick={() => setAnswers({...answers, target: obj.id as any})} 
-                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.target === obj.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    className={`py-2 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.target === obj.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
                     {obj.label}
                   </button>
                 ))}
@@ -359,9 +359,9 @@ const App: FC = () => {
             </div>
 
             {/* ===== MỤC 3: NƠI THỰC HIỆN ===== */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
-                <span className="text-bca-red">●</span> Mục 3: Nơi thực hiện <span className="text-bca-red">*</span>
+            <div className="space-y-2">
+              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 3: Nơi thực hiện
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -369,7 +369,7 @@ const App: FC = () => {
                   { id: 'COMMUNE', label: 'Công an cấp Xã / Phường' }
                 ].map(loc => (
                   <button key={loc.id} onClick={() => setAnswers({...answers, agencyLevel: loc.id as any})} 
-                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.agencyLevel === loc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    className={`py-2 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.agencyLevel === loc.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
                     {loc.label}
                   </button>
                 ))}
@@ -377,9 +377,9 @@ const App: FC = () => {
             </div>
 
             {/* ===== MỤC 4: HÌNH THỨC NHẬN KẾT QUẢ ===== */}
-            <div className="space-y-3">
-              <label className="text-[11px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
-                <span className="text-bca-red">●</span> Mục 4: Hình thức nhận kết quả <span className="text-bca-red">*</span>
+            <div className="space-y-2">
+              <label className="text-[13px] font-black text-slate-600 uppercase tracking-tight ml-1 block">
+                <span className="text-bca-red">●</span> Mục 4: Hình thức nhận kết quả
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -387,7 +387,7 @@ const App: FC = () => {
                   { id: 'POST', label: 'Qua Bưu điện' }
                 ].map(method => (
                   <button key={method.id} onClick={() => setAnswers({...answers, deliveryMethod: method.id as any})} 
-                    className={`py-3 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.deliveryMethod === method.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
+                    className={`py-2 px-4 rounded-xl border-2 font-bold text-[11px] transition-all ${answers.deliveryMethod === method.id ? 'border-bca-red bg-red-50 text-bca-red shadow-md' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}>
                     {method.label}
                   </button>
                 ))}
